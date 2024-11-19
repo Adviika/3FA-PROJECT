@@ -168,7 +168,7 @@
     <h3>Add New Password</h3>
     <input type="text" id="siteName" placeholder="Site Name" required>
     <input type="email" id="email" placeholder="Email/Username" required>
-    <input type="password" id="password" placeholder="Password" required>
+    <input type="text" id="password" placeholder="Password" required>
     <button onclick="addPassword()">Add</button>
     <button onclick="closeModal()">Cancel</button>
   </div>
@@ -182,6 +182,7 @@
         <li>Social Media Accounts</li>
         <li>Email Accounts</li>
         <li>Bank Accounts</li>
+        <li style="color:red" onclick="signout()">Signout</li>
       </ul>
     </div>
     <div class="main-content">
@@ -194,17 +195,17 @@
           <div>
             <h3>GitHub</h3>
             <p><strong>Email/username:</strong> user@github.com</p>
-            <p><strong>Password:</strong> ********</p>
+            <p><strong>Password:</strong> 123456</p>
           </div>
-          <button class="copy-button" onclick="copyPassword('********')">Copy</button>
+          <button class="copy-button" onclick="copyPassword('123456')">Copy</button>
         </div>
         <div class="password-item">
           <div>
             <h3>LinkedIn</h3>
             <p><strong>Email/username:</strong> user@linkedin.com</p>
-            <p><strong>Password:</strong> ********</p>
+            <p><strong>Password:</strong> abcdefg</p>
           </div>
-          <button class="copy-button" onclick="copyPassword('********')">Copy</button>
+          <button class="copy-button" onclick="copyPassword('abcdefg')">Copy</button>
         </div>
       </div>
       <footer>
@@ -233,15 +234,12 @@
         newItem.innerHTML = `
           <div>
             <h3>${siteName}</h3>
-            <p><strong>Email/Username:</strong> ${email}</p>
-            <p><strong>Password:</strong> ********</p>
+            <p><strong>Email/username:</strong> ${email}</p>
+            <p><strong>Password:</strong> ${password}</p>
           </div>
           <button class="copy-button" onclick="copyPassword('${password}')">Copy</button>
         `;
         passwordList.appendChild(newItem);
-        document.getElementById('siteName').value = '';
-        document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
         closeModal();
       } else {
         alert('Please fill in all fields.');
@@ -249,10 +247,14 @@
     }
     function copyPassword(password) {
       navigator.clipboard.writeText(password).then(() => {
-        alert('Password copied!');
-      }).catch((err) => {
-        console.error('Error copying password: ', err);
+        alert('Password copied to clipboard.');
+      }).catch(err => {
+        alert('Failed to copy password.');
       });
+    }
+    function signout() {
+      alert('Signout Successful!');
+      window.location.href="./home.html";
     }
   </script>
 </body>
