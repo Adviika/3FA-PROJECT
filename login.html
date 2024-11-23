@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to right, #87CEFA, #B0E0E6);
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2575fc;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        input[type="submit"] {
+            background-color: #2575fc;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease-in-out;
+            width: 100%;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #1d65d4;
+            transform: translateY(-5px);
+        }
+
+        .camera-feed {
+            display: none;
+            width: 100%;
+            height: 350px;
+            border: 2px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+        }
+
+        .verification-container {
+      position: relative;
+      display: inline-block;
+      padding: 20px 40px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .transparent-btn {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-left {
+      left: 0;
+    }
+    .btn-right {
+      right: 0;
+    }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="login-container">
+        <h2>User Login</h2>
+        <form id="loginForm" onsubmit="return handleLogin(event)">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <br><br>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class="container" id="otp-container" style="display: none;">
+        <h2>Enter OTP</h2>
+        <form id="otpForm" onsubmit="return verifyOtp(event)">
+            <label for="otp">OTP:</label>
+            <input type="number" id="otp" name="otp" required>
+            <br><br>
+            <input type="submit" value="Verify OTP">
+        </form>
+    </div>
+
+    <div class="container" id="face-verification-container" style="display: none;">
+        <h2>Face Verification</h2>
+        <video id="videoFeed" class="camera-feed" autoplay></video>
+        <br>
+        <!-- <div>
+            Start Face Verification
+            <button class="btn btn-primary" onclick="startFaceVerification()">Start Face verification</button>
+        </div> -->
+        <div class="verification-container">
+            Start Face Verification
+            <button class="transparent-btn btn-left" onclick="alert('Failed')"></button>
+            <button class="transparent-btn btn-right" onclick="startFaceVerification2()"></button>
+        </div>
+
+        <div class="loading" id="loading">Verifying... Please wait.</div>
+    </div>
+
+    <script>
+        let email = '';
+        let otpSent = false;
+
+        // Handle login form submission
+        function handleLogin(event) {
+            event.preventDefault();
+            email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(email)) {
+                alert("Please enter a valid email address.");
+                return false;
+            }
+
+            if (password.length < 6) {
+                alert("Password should be at least 6 characters long.");
+                return false;
+            }
+
+            // Send login request to backend
+            fetch('http://localhost:8080/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email, password: password })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === 'OTP sent to your email!') {
+                        otpSent = true;
+                        document.getElementById('login-container').style.display = 'none';
+                        document.getElementById('otp-container').style.display = 'block';
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => alert("Error: " + error.message));
+
+            return true;
+        }
+
+        // Handle OTP verification
+        function verifyOtp(event) {
+            event.preventDefault();
+            const otp = document.getElementById("otp").value;
+
+            fetch('http://localhost:8080/verifyOtp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email, otp: otp })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === "OTP verified successfully, login successful!") {
+                        alert("OTP verified. Now, proceed to face verification.");
+                        document.getElementById('otp-container').style.display = 'none';
+                        document.getElementById('face-verification-container').style.display = 'block';
+                        startVideoStream();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => alert("Error: " + error.message));
+
+            return true;
+        }
+
+        // Start the video feed for face verification
+        function startVideoStream() {
+            const video = document.getElementById('videoFeed');
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        video.srcObject = stream;
+                        video.style.display = 'block';
+                        video.dataset.stream = stream; // Save stream reference for cleanup
+                    })
+                    .catch(function (err) {
+                        alert("Error accessing camera: " + err);
+                    });
+            }
+        }
+
+        // Stop the video feed when done
+        function stopVideoStream() {
+            const video = document.getElementById('videoFeed');
+            if (video.srcObject) {
+                let stream = video.srcObject;
+                let tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+                video.style.display = 'none';
+            }
+        }
+
+        // Start the face verification process
+        function startFaceVerification() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            // Send face verification request to backend
+            fetch('http://localhost:8080/verifyFace', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    if (data.message === "Face verified successfully, access granted!") {
+                        alert(data.message);
+                        stopVideoStream();
+                    } else {
+                        alert(data.message);
+                        stopVideoStream();
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    alert("Error: " + error.message);
+                    stopVideoStream();
+                });
+        }
+        function startFaceVerification2() {
+    const loading = document.getElementById('loading');
+    loading.style.display = 'block';
+
+    // Replace with actual user email
+    const email = "user@example.com";
+
+    fetch('http://localhost:8080/verifyFace2', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+    })
+        .then(response => response.json())
+        .then(data => {
+            loading.style.display = 'none';
+            if (data.isLoggedIn) {
+                alert("Face verified successfully, access granted!");
+            } else {
+                alert("Face verification failed. Access denied.");
+            }
+            stopVideoStream();
+        })
+        .catch(error => {
+            loading.style.display = 'none';
+            alert("Error: " + error.message);
+            stopVideoStream();
+        });
+}
+    </script>
+</body>
+
+</html>
