@@ -136,15 +136,15 @@
         <h2>Face Verification</h2>
         <video id="videoFeed" class="camera-feed" autoplay></video>
         <br>
-        <!-- <div>
+        <div>
             Start Face Verification
             <button class="btn btn-primary" onclick="startFaceVerification()">Start Face verification</button>
-        </div> -->
-        <div class="verification-container">
+        </div>
+        <!-- <div class="verification-container">
             Start Face Verification
             <button class="transparent-btn btn-left" onclick="alert('Failed')"></button>
             <button class="transparent-btn btn-right" onclick="startFaceVerification2()"></button>
-        </div>
+        </div> -->
 
         <div class="loading" id="loading">Verifying... Please wait.</div>
     </div>
@@ -152,24 +152,24 @@
     <script>
         let email = '';
         let otpSent = false;
-
+    
         // Handle login form submission
         function handleLogin(event) {
             event.preventDefault();
             email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
             var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+    
             if (!emailRegex.test(email)) {
                 alert("Please enter a valid email address.");
                 return false;
             }
-
+    
             if (password.length < 6) {
                 alert("Password should be at least 6 characters long.");
                 return false;
             }
-
+    
             // Send login request to backend
             fetch('http://localhost:8080/login', {
                 method: 'POST',
@@ -178,26 +178,26 @@
                 },
                 body: JSON.stringify({ email: email, password: password })
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message === 'OTP sent to your email!') {
-                        otpSent = true;
-                        document.getElementById('login-container').style.display = 'none';
-                        document.getElementById('otp-container').style.display = 'block';
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => alert("Error: " + error.message));
-
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === 'OTP sent to your email!') {
+                    otpSent = true;
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('otp-container').style.display = 'block';
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => alert("Error: " + error.message));
+    
             return true;
         }
-
+    
         // Handle OTP verification
         function verifyOtp(event) {
             event.preventDefault();
             const otp = document.getElementById("otp").value;
-
+    
             fetch('http://localhost:8080/verifyOtp', {
                 method: 'POST',
                 headers: {
@@ -205,22 +205,22 @@
                 },
                 body: JSON.stringify({ email: email, otp: otp })
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.message === "OTP verified successfully, login successful!") {
-                        alert("OTP verified. Now, proceed to face verification.");
-                        document.getElementById('otp-container').style.display = 'none';
-                        document.getElementById('face-verification-container').style.display = 'block';
-                        startVideoStream();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => alert("Error: " + error.message));
-
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "OTP verified successfully, login successful!") {
+                    alert("OTP verified. Now, proceed to face verification.");
+                    document.getElementById('otp-container').style.display = 'none';
+                    document.getElementById('face-verification-container').style.display = 'block';
+                    startVideoStream();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => alert("Error: " + error.message));
+    
             return true;
         }
-
+    
         // Start the video feed for face verification
         function startVideoStream() {
             const video = document.getElementById('videoFeed');
@@ -236,7 +236,7 @@
                     });
             }
         }
-
+    
         // Stop the video feed when done
         function stopVideoStream() {
             const video = document.getElementById('videoFeed');
@@ -248,60 +248,41 @@
                 video.style.display = 'none';
             }
         }
-
+    
         // Start the face verification process
-        function startFaceVerification() {
-            const loading = document.getElementById('loading');
-            loading.style.display = 'block';
-
-            // Send face verification request to backend
-            fetch('http://localhost:8080/verifyFace', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email: email })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    loading.style.display = 'none';
-                    if (data.message === "Face verified successfully, access granted!") {
-                        alert(data.message);
-                        stopVideoStream();
-                    } else {
-                        alert(data.message);
-                        stopVideoStream();
-                    }
-                })
-                .catch(error => {
-                    loading.style.display = 'none';
-                    alert("Error: " + error.message);
-                    stopVideoStream();
-                });
-        }
-        function startFaceVerification2() {
+function startFaceVerification() {
     const loading = document.getElementById('loading');
     loading.style.display = 'block';
 
-    // Replace with actual user email
-    const email = "user@example.com";
+    // Create a canvas element to capture a frame from the video
+    const video = document.getElementById('videoFeed');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    fetch('http://localhost:8080/verifyFace2', {
+    // Convert the canvas to a data URL (base64 encoded image)
+    const imageData = canvas.toDataURL('image/png');
+
+    // Send face verification request to backend with captured image
+    fetch('http://localhost:8080/verifyFace', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: email, image: imageData })
     })
         .then(response => response.json())
         .then(data => {
             loading.style.display = 'none';
-            if (data.isLoggedIn) {
-                alert("Face verified successfully, access granted!");
+            if (data.message === "Face verified successfully, access granted!") {
+                alert(data.message);
+                stopVideoStream();
             } else {
-                alert("Face verification failed. Access denied.");
+                alert(data.message);
+                stopVideoStream();
             }
-            stopVideoStream();
         })
         .catch(error => {
             loading.style.display = 'none';
@@ -309,7 +290,9 @@
             stopVideoStream();
         });
 }
+
     </script>
+    
 </body>
 
 </html>
